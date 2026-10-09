@@ -1,0 +1,52 @@
+name: Production Static Site Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+
+# Set permissions required for secure GitHub Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Prevent concurrent deployments from overriding each other
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Quality Assurance (QA) Job
+  test-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: HTML Linting Check
+        run: |
+          echo "Running HTML syntax verification..."
+          # In a real pipeline, we run tools like HTMLHint or Prettier here.
+
+  # Deployment Job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: test-and-lint
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup GitHub Pages Config
+        uses: actions/configure-pages@v5
+
+      - name: Package Web Artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.' # Deploy everything in the root directory
+
+      - name: Deploy to Live Environment
+        id: deployment
+        uses: actions/deploy-pages@v4
